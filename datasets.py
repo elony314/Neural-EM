@@ -16,10 +16,11 @@ def cfg():
     name = 'shapes'
     path = './data'
     binary = True
-    train_size = None           # subset of training set (None, int)
-    valid_size = 1000           # subset of valid set (None, int)
-    test_size = None            # subset of test set (None, int)
-    queue_capacity = 100        # nr of batches in the queue
+    train_size = None  # subset of training set (None, int)
+    valid_size = 1000  # subset of valid set (None, int)
+    test_size = None  # subset of test set (None, int)
+    queue_capacity = 100  # nr of batches in the queue
+
 
 ds.add_named_config('shapes',
                     {'name': 'shapes',
@@ -49,15 +50,19 @@ ds.add_named_config('flying_mnist_hard_3',
                     {'name': 'flying_mnist_hard_3digits',
                      'binary': False})
 ds.add_named_config('multi_mnist_2d',
-                   {'name': 'mnist_2digits_downsampled',
-                    'binary': False})
+                    {'name': 'mnist_2digits_downsampled',
+                     'binary': False})
+
+ds.add_named_config('bread',
+                    {'name': 'pick_and_place_Bread_level_1-step_00000000520',
+                     'binary': False})
 
 
 class InputPipeLine(object):
     @ds.capture
     def _open_dataset(self, out_list, path, name, train_size, valid_size, test_size):
         # open dataset file
-        self._hdf5_file = h5py.File(os.path.join(path, name + '.h5'), 'r')
+        self._hdf5_file = h5py.File(os.path.join(path, name + '.hdf5'), 'r')
         self._data_in_file = {
             data_name: self._hdf5_file[self.usage][data_name] for data_name in out_list
         }
@@ -81,7 +86,8 @@ class InputPipeLine(object):
         }
 
     @ds.capture
-    def __init__(self, usage, shuffle, batch_size, sequence_length, queue_capacity, _rnd, out_list=('features', 'groups')):
+    def __init__(self, usage, shuffle, batch_size, sequence_length, queue_capacity, _rnd,
+                 out_list=('features', 'groups')):
         self.usage = usage
         self.shuffle = shuffle
         self.sequence_length = sequence_length
@@ -90,7 +96,6 @@ class InputPipeLine(object):
         self.samples_cache = {}
 
         with tf.name_scope("{}_queue".format(usage[:5])):
-
             self._open_dataset(out_list)
 
             # set up queue
@@ -111,8 +116,9 @@ class InputPipeLine(object):
                 self.output = reshaped_output
 
     def get_feed_data(self, start_idx):
-        feed_dict = {self._data_in[data_name]: ds[:self.sequence_length, start_idx:start_idx + self.batch_size][:, :, None]
-                     for data_name, ds in self._data_in_file.items()}
+        feed_dict = {
+            self._data_in[data_name]: ds[:self.sequence_length, start_idx:start_idx + self.batch_size][:, :, None]
+            for data_name, ds in self._data_in_file.items()}
         feed_dict[self._data_in['idx']] = start_idx
         return feed_dict
 
